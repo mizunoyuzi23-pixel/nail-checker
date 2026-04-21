@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巻き爪チェッカー</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f5f5f5; color: #1a1a1a; }
+.app { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
+h1 { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px; }
+.sub { font-size: 13px; color: #888; text-align: center; margin-bottom: 24px; }
+.api-box { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid #eee; }
+.api-box p { font-size: 13px; color: #555; margin-bottom: 8px; line-height: 1.6; }
+.api-box a { color: #1a6ed8; }
+.api-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+.btn-group { display: flex; gap: 10px; margin-bottom: 12px; }
+.btn-dark { flex: 1; padding: 16px 8px; background: #1a1a1a; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
+.btn-light { flex: 1; padding: 16px 8px; background: #f0f0f0; color: #1a1a1a; border: none; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
+.tip { background: #f8f8f8; border-radius: 8px; padding: 12px; font-size: 12px; color: #666; line-height: 1.6; margin-bottom: 16px; }
+.preview-wrap { position: relative; margin-bottom: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+.preview-wrap img { width: 100%; max-height: 300px; object-fit: contain; background: #f0f0f0; display: block; }
+.btn-change { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+.btn-analyze { width: 100%; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 16px; }
+.loading { text-align: center; padding: 40px 0; }
+.spinner { width: 40px; height: 40px; border: 3px solid #eee; border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { font-size: 14px; color: #888; }
+.card { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #eee; }
+.badge { display: inline-block; font-size: 13px; font-weight: bold; padding: 3px 12px; border-radius: 20px; margin-right: 10px; }
+.b0 { background: #EAF3DE; color: #27500A; }
+.b1 { background: #FAEEDA; color: #633806; }
+.b2 { background: #FAECE7; color: #712B13; }
+.b3 { background: #FCEBEB; color: #791F1F; }
+.rtitle { font-size: 17px; font-weight: bold; }
+.srow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.slabel { font-size: 13px; color: #888; width: 80px; flex-shrink: 0; }
+.sbg { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+.sbar { height: 100%; border-radius: 4px; }
+.sval { font-size: 13px; font-weight: bold; width: 28px; text-align: right; }
+.hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
+.stitle { font-size: 11px; color: #aaa; text-transform: uppercase; margin-bottom: 6px; }
+.summary { font-size: 14px; line-height: 1.7; }
+.dnote { background: #FCEBEB; color: #791F1F; border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-top: 10px; }
+.alist { list-style: none; padding: 0; }
+.alist li { font-size: 14px; padding: 6px 0 6px 18px; position: relative; border-bottom: 1px solid #f0f0f0; line-height: 1.5; }
+.alist li:last-child { border-bottom: none; }
+.alist li::before { content: "->"; position: absolute; left: 0; color: #aaa; font-size: 12px; top: 7px; }
+.btn-retry { width: 100%; padding: 14px; background: #f0f0f0; color: #1a1a1a; border: none; border-radius: 12px; font-size: 14px; cursor: pointer; margin-bottom: 12px; }
+.note { font-size: 11px; color: #bbb; text-align: center; line-height: 1.6; padding: 0 8px 24px; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>巻き爪チェッカー</h1>
+  <p class="sub">爪の写真を撮影してAIが状態を分析します</p>
+  <div class="api-box">
+    <p><strong>OpenRouter APIキー</strong>を入力してください<br>
+    取得先: <a href="https://openrouter.ai/settings/keys" target="_blank">openrouter.ai/settings/keys</a></p>
+    <input class="api-input" type="password" id="apikey" placeholder="sk-or-v1-...">
+  </div>
+  <div id="s-upload">
+    <div class="btn-group">
+      <button class="btn-dark" id="btn-cam">カメラで撮影</button>
+      <button class="btn-light" id="btn-lib">写真を選択</button>
+    </div>
+    <div class="tip"><strong>撮影のコツ:</strong> 明るい場所で爪の先端と両サイドが見えるよう真上から撮影すると精度が上がります。</div>
+    <input type="file" id="f-cam" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="f-lib" accept="image/*" style="display:none">
+  </div>
+  <div id="s-preview" class="hidden">
+    <div class="preview-wrap">
+      <img id="preview" src="" alt="preview">
+      <button class="btn-change" id="btn-chg">変更</button>
+    </div>
+    <button class="btn-analyze" id="btn-run">AIで分析する</button>
+  </div>
+  <div id="s-loading" class="hidden">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p id="ldtxt">画像を解析しています...</p>
+    </div>
+  </div>
+  <div id="s-result" class="hidden"></div>
+</div>
+<script>
+var b64=null,mtype='image/jpeg',ltimer=null,lidx=0;
+var lmsgs=['画像を解析しています...','爪の形状を検出中...','湾曲度を計測中...','結果をまとめています...'];
+function el(id){return document.getElementById(id);}
+function showSection(name){
+  ['upload','preview','loading','result'].forEach(function(s){
+    var e=el('s-'+s);
+    if(s===name){e.classList.remove('hidden');}else{e.classList.add('hidden');}
+  });
+}
+function reset(){b64=null;el('f-cam').value='';el('f-lib').value='';showSection('upload');}
+function loadFile(file){
+  if(!file)return;
+  mtype=file.type||'image/jpeg';
+  var r=new FileReader();
+  r.onload=function(e){b64=e.target.result.split(',')[1];el('preview').src=e.target.result;showSection('preview');};
+  r.readAsDataURL(file);
+}
+el('btn-cam').onclick=function(){el('f-cam').click();};
+el('btn-lib').onclick=function(){el('f-lib').click();};
+el('f-cam').onchange=function(e){loadFile(e.target.files[0]);};
+el('f-lib').onchange=function(e){loadFile(e.target.files[0]);};
+el('btn-chg').onclick=reset;
+el('btn-run').onclick=async function(){
+  var key=el('apikey').value.trim();
+  if(!key){alert('APIキーを入力してください');return;}
+  if(!b64)return;
+  showSection('loading');
+  lidx=0;el('ldtxt').textContent=lmsgs[0];
+  ltimer=setInterval(function(){lidx=(lidx+1)%lmsgs.length;el('ldtxt').textContent=lmsgs[lidx];},1800);
+  try{
+    var prompt='あなたは巻き爪の画像を分析する専門アシスタントです。以下のJSON形式のみで回答してください。前置き不要。\n{"severity":"none or mild or moderate or severe","severityLabel":"正常 or 軽度 or 中等度 or 重度","curvatureScore":0から100の整数,"rednessScore":0から100の整数,"pressureScore":0から100の整数,"summary":"2から3文の所見（日本語）","advice":["アドバイス1","アドバイス2","アドバイス3"],"needsDoctor":true or false}\nJSONのみ返してください。この爪の画像を分析してください。';
+    var res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'google/gemma-4-26b-a4b-it:free',
+        messages:[{role:'user',content:[
+          {type:'text',text:prompt},
+          {type:'image_url',image_url:{url:'data:'+mtype+';base64,'+b64}}
+        ]}]
+      })
+    });
+    var data=await res.json();
+    clearInterval(ltimer);
+    if(data.error){showErr('APIエラー: '+data.error.message);return;}
+    var txt=data.choices[0].message.content;
+    var m=txt.match(/\{[\s\S]*\}/);
+    if(!m){showErr('解析できませんでした:\n'+txt.substring(0,300));return;}
+    try{showResult(JSON.parse(m[0]));}catch(e){showErr('解析エラー:\n'+txt.substring(0,300));}
+  }catch(e){clearInterval(ltimer);showErr('通信エラー: '+e.message);}
+};
+function showErr(msg){
+  showSection('result');
+  el('s-result').innerHTML='<div class="card"><p style="color:#A32D2D;font-size:14px;white-space:pre-wrap;margin-bottom:12px">'+msg+'</p><button class="btn-retry" onclick="location.reload()">最初からやり直す</button></div>';
+}
+function bc(s){return s<30?'#639922':s<60?'#BA7517':'#E24B4A';}
+function showResult(r){
+  showSection('result');
+  var sc={none:'b0',mild:'b1',moderate:'b2',severe:'b3'};
+  var adv=(r.advice||[]).map(function(a){return '<li>'+a+'</li>';}).join('');
+  var doc=r.needsDoctor?'<div class="dnote"><strong>受診をおすすめします:</strong> 皮膚科または整形外科への相談が適切です。</div>':'';
+  el('s-result').innerHTML=
+    '<div class="card">'+
+    '<div style="display:flex;align-items:center;margin-bottom:16px">'+
+    '<span class="badge '+(sc[r.severity]||'b0')+'">'+(r.severityLabel||r.severity)+'</span>'+
+    '<span class="rtitle">診断結果</span></div>'+
+    '<div style="margin:16px 0">'+
+    '<div class="srow"><span class="slabel">湾曲度</span><div class="sbg"><div class="sbar" style="width:'+r.curvatureScore+'%;background:'+bc(r.curvatureScore)+'"></div></div><span class="sval">'+r.curvatureScore+'</span></div>'+
+    '<div class="srow"><span class="slabel">炎症・赤み</span><div class="sbg"><div class="sbar" style="width:'+r.rednessScore+'%;background:'+bc(r.rednessScore)+'"></div></div><span class="sval">'+r.rednessScore+'</span></div>'+
+    '<div class="srow"><span class="slabel">食い込み度</span><div class="sbg"><div class="sbar" style="width:'+r.pressureScore+'%;background:'+bc(r.pressureScore)+'"></div></div><span class="sval">'+r.pressureScore+'</span></div>'+
+    '</div><hr class="hr">'+
+    '<p class="stitle">所見</p><p class="summary">'+r.summary+'</p>'+doc+
+    '<hr class="hr"><p class="stitle">アドバイス</p>'+
+    '<ul class="alist">'+adv+'</ul></div>'+
+    '<button class="btn-retry" id="btn-retry">別の写真で再測定する</button>'+
+    '<p class="note">※ このアプリはAIによる参考情報であり、医療診断ではありません。</p>';
+  el('btn-retry').onclick=reset;
+}
+</script>
+</body>
+</html>
