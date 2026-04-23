@@ -58,7 +58,7 @@ h1 { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px;
   <div class="api-box">
     <p><strong>OpenRouter APIキー</strong>を入力してください<br>
     取得先: <a href="https://openrouter.ai/settings/keys" target="_blank">openrouter.ai/settings/keys</a></p>
-    <input class="api-input" type="password" id="apikey" placeholder="sk-or-v1-..." oninput="localStorage.setItem('orkey',this.value)">
+    <input class="api-input" type="password" id="apikey" placeholder="sk-or-v1-...">
   </div>
   <div id="s-upload">
     <div class="btn-group">
@@ -85,94 +85,56 @@ h1 { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px;
   <div id="s-result" class="hidden"></div>
 </div>
 <script>
-var b64=null,mtype='image/jpeg',ltimer=null,lidx=0;
+var b64=null, mtype='image/jpeg', ltimer=null, lidx=0;
 var lmsgs=['画像を解析しています...','爪の形状を検出中...','湾曲度を計測中...','結果をまとめています...'];
-function el(id){return document.getElementById(id);}
+
+function el(id){ return document.getElementById(id); }
+
 function showSection(name){
   ['upload','preview','loading','result'].forEach(function(s){
     var e=el('s-'+s);
-    if(s===name){e.classList.remove('hidden');}else{e.classList.add('hidden');}
+    if(s===name){ e.classList.remove('hidden'); }else{ e.classList.add('hidden'); }
   });
 }
-function reset(){b64=null;el('f-cam').value='';el('f-lib').value='';showSection('upload');}
+
+function reset(){
+  b64=null;
+  el('f-cam').value='';
+  el('f-lib').value='';
+  showSection('upload');
+}
+
 function loadFile(file){
   if(!file)return;
   mtype=file.type||'image/jpeg';
   var r=new FileReader();
-  r.onload=function(e){b64=e.target.result.split(',')[1];el('preview').src=e.target.result;showSection('preview');};
+  r.onload=function(e){
+    b64=e.target.result.split(',')[1];
+    el('preview').src=e.target.result;
+    showSection('preview');
+  };
   r.readAsDataURL(file);
 }
-el('btn-cam').onclick=function(){el('f-cam').click();};
-el('btn-lib').onclick = function() {
-  try {
-    el('f-lib').click();
-  } catch(e) {
-    alert('エラー: ' + e.message);
-  }
-};
-el('f-cam').onchange=function(e){loadFile(e.target.files[0]);};
-el('f-lib').onchange=function(e){loadFile(e.target.files[0]);};
+
+var savedKey = localStorage.getItem('orkey');
+if(savedKey){ el('apikey').value=savedKey; }
+
+el('apikey').addEventListener('input', function(){
+  localStorage.setItem('orkey', this.value);
+});
+
+el('btn-cam').onclick=function(){ el('f-cam').click(); };
+el('btn-lib').onclick=function(){ el('f-lib').click(); };
+el('f-cam').onchange=function(e){ loadFile(e.target.files[0]); };
+el('f-lib').onchange=function(e){ loadFile(e.target.files[0]); };
 el('btn-chg').onclick=reset;
+
 el('btn-run').onclick=async function(){
   var key=el('apikey').value.trim();
-  if(!key){alert('APIキーを入力してください');return;}
+  if(!key){ alert('APIキーを入力してください'); return; }
   if(!b64)return;
   showSection('loading');
-  lidx=0;el('ldtxt').textContent=lmsgs[0];
-  ltimer=setInterval(function(){lidx=(lidx+1)%lmsgs.length;el('ldtxt').textContent=lmsgs[lidx];},1800);
+  lidx=0; el('ldtxt').textContent=lmsgs[0];
+  ltimer=setInterval(function(){ lidx=(lidx+1)%lmsgs.length; el('ldtxt').textContent=lmsgs[lidx]; },1800);
   try{
-    var prompt = 'あなたは巻き爪（陥入爪）の専門医です。画像を見て以下の項目を客観的に測定・数値化してください。前置き不要でJSONのみ返してください。\n\n測定方法：\n1. 湾曲度(curvatureScore)：爪の左端と右端が皮膚に食い込む角度を0-100で数値化。爪がまっすぐ=0、両端が90度以上曲がり完全に皮膚に刺さっている=100\n2. 炎症(rednessScore)：爪周囲の赤み・腫れ・膿の有無を0-100で数値化。正常な肌色=0、強い発赤・腫脹・膿あり=100\n3. 食い込み度(pressureScore)：爪の端が皮膚に接触・埋没している深さを0-100で数値化。接触なし=0、完全に皮膚内に埋没=100\n4. 重症度(severity)：上記3項目の総合判定。none(全て30未満)、mild(いずれか30-50)、moderate(いずれか50-70)、severe(いずれか70以上)\n\n{"severity":"none or mild or moderate or severe","severityLabel":"正常 or 軽度 or 中等度 or 重度","curvatureScore":左右の爪端角度から算出した整数,"rednessScore":炎症レベルから算出した整数,"pressureScore":食い込み深さから算出した整数,"summary":"測定値の根拠を含む2-3文の所見（日本語）","advice":["具体的アドバイス1","具体的アドバイス2","具体的アドバイス3"],"needsDoctor":true or false}\nJSONのみ返してください。';    var res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({
-        model:'google/gemma-4-26b-a4b-it:free',
-        messages:[{role:'user',content:[
-          {type:'text',text:prompt},
-          {type:'image_url',image_url:{url:'data:'+mtype+';base64,'+b64}}
-        ]}]
-      })
-    });
-    var data=await res.json();
-    clearInterval(ltimer);
-    if(data.error){showErr('APIエラー: '+data.error.message);return;}
-    var txt=data.choices[0].message.content;
-    var m=txt.match(/\{[\s\S]*\}/);
-    if(!m){showErr('解析できませんでした:\n'+txt.substring(0,300));return;}
-    try{showResult(JSON.parse(m[0]));}catch(e){showErr('解析エラー:\n'+txt.substring(0,300));}
-  }catch(e){clearInterval(ltimer);showErr('通信エラー: '+e.message);}
-};
-function showErr(msg){
-  showSection('result');
-  el('s-result').innerHTML='<div class="card"><p style="color:#A32D2D;font-size:14px;white-space:pre-wrap;margin-bottom:12px">'+msg+'</p><button class="btn-retry" onclick="location.reload()">最初からやり直す</button></div>';
-}
-function bc(s){return s<30?'#639922':s<60?'#BA7517':'#E24B4A';}
-function showResult(r){
-  showSection('result');
-  var sc={none:'b0',mild:'b1',moderate:'b2',severe:'b3'};
-  var adv=(r.advice||[]).map(function(a){return '<li>'+a+'</li>';}).join('');
-  var doc=r.needsDoctor?'<div class="dnote"><strong>受診をおすすめします:</strong> 皮膚科または整形外科への相談が適切です。</div>':'';
-  el('s-result').innerHTML=
-    '<div class="card">'+
-    '<div style="display:flex;align-items:center;margin-bottom:16px">'+
-    '<span class="badge '+(sc[r.severity]||'b0')+'">'+(r.severityLabel||r.severity)+'</span>'+
-    '<span class="rtitle">診断結果</span></div>'+
-    '<div style="margin:16px 0">'+
-    '<div class="srow"><span class="slabel">湾曲度</span><div class="sbg"><div class="sbar" style="width:'+r.curvatureScore+'%;background:'+bc(r.curvatureScore)+'"></div></div><span class="sval">'+r.curvatureScore+'</span></div>'+
-    '<div class="srow"><span class="slabel">炎症・赤み</span><div class="sbg"><div class="sbar" style="width:'+r.rednessScore+'%;background:'+bc(r.rednessScore)+'"></div></div><span class="sval">'+r.rednessScore+'</span></div>'+
-    '<div class="srow"><span class="slabel">食い込み度</span><div class="sbg"><div class="sbar" style="width:'+r.pressureScore+'%;background:'+bc(r.pressureScore)+'"></div></div><span class="sval">'+r.pressureScore+'</span></div>'+
-    '</div><hr class="hr">'+
-    '<p class="stitle">所見</p><p class="summary">'+r.summary+'</p>'+doc+
-    '<hr class="hr"><p class="stitle">アドバイス</p>'+
-    '<ul class="alist">'+adv+'</ul></div>'+
-    '<button class="btn-retry" id="btn-retry">別の写真で再測定する</button>'+
-    '<p class="note">※ このアプリはAIによる参考情報であり、医療診断ではありません。</p>';
-  el('btn-retry').onclick=reset;
-}
-  <script>
-document.addEventListener('DOMContentLoaded',function(){
-  var k=localStorage.getItem('orkey');
-  if(k) document.getElementById('apikey').value=k;
-});
-</script>
-</body>
-</html>
+    var prompt='あ
