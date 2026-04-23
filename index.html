@@ -58,7 +58,7 @@ h1 { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px;
   <div class="api-box">
     <p><strong>OpenRouter APIキー</strong>を入力してください<br>
     取得先: <a href="https://openrouter.ai/settings/keys" target="_blank">openrouter.ai/settings/keys</a></p>
-    <input class="api-input" type="password" id="apikey" placeholder="sk-or-v1-...">
+    <input class="api-input" type="password" id="apikey" placeholder="sk-or-v1-..." oninput="localStorage.setItem('orkey',this.value)">
   </div>
   <div id="s-upload">
     <div class="btn-group">
@@ -163,6 +163,12 @@ function showResult(r){
     '<p class="note">※ このアプリはAIによる参考情報であり、医療診断ではありません。</p>';
   el('btn-retry').onclick=reset;
 }
+  <script>
+document.addEventListener('DOMContentLoaded',function(){
+  var k=localStorage.getItem('orkey');
+  if(k) document.getElementById('apikey').value=k;
+});
+</script>
 </script>
 </body>
 </html>
