@@ -103,7 +103,13 @@ function loadFile(file){
   r.readAsDataURL(file);
 }
 el('btn-cam').onclick=function(){el('f-cam').click();};
-el('btn-lib').onclick=function(){el('f-lib').click();};
+el('btn-lib').onclick = function() {
+  try {
+    el('f-lib').click();
+  } catch(e) {
+    alert('エラー: ' + e.message);
+  }
+};
 el('f-cam').onchange=function(e){loadFile(e.target.files[0]);};
 el('f-lib').onchange=function(e){loadFile(e.target.files[0]);};
 el('btn-chg').onclick=reset;
