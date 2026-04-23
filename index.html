@@ -63,11 +63,11 @@ h1 { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px;
   <div id="s-upload">
     <div class="btn-group">
       <button class="btn-dark" id="btn-cam">カメラで撮影</button>
-      <label for="f-lib" class="btn-light" style="text-align:center;">写真を選択</label>
+      <button class="btn-light" id="btn-lib" style="text-align:center;">写真を選択</button>
     </div>
     <div class="tip"><strong>撮影のコツ:</strong> 明るい場所で爪の先端と両サイドが見えるよう真上から撮影すると精度が上がります。</div>
     <input type="file" id="f-cam" accept="image/*" capture="environment" style="display:none">
-    <input type="file" id="f-lib" accept="image/*" style="display:none">
+    <input type="file" id="f-lib" accept="image/*" style="position:absolute;left:-9999px;">
   </div>
   <div id="s-preview" class="hidden">
     <div class="preview-wrap">
