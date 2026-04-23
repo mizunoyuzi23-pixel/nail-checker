@@ -115,8 +115,7 @@ el('btn-run').onclick=async function(){
   lidx=0;el('ldtxt').textContent=lmsgs[0];
   ltimer=setInterval(function(){lidx=(lidx+1)%lmsgs.length;el('ldtxt').textContent=lmsgs[lidx];},1800);
   try{
-    var prompt='あなたは巻き爪の画像を分析する専門アシスタントです。以下のJSON形式のみで回答してください。前置き不要。\n{"severity":"none or mild or moderate or severe","severityLabel":"正常 or 軽度 or 中等度 or 重度","curvatureScore":0から100の整数,"rednessScore":0から100の整数,"pressureScore":0から100の整数,"summary":"2から3文の所見（日本語）","advice":["アドバイス1","アドバイス2","アドバイス3"],"needsDoctor":true or false}\nJSONのみ返してください。この爪の画像を分析してください。';
-    var res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+    var prompt = 'あなたは巻き爪（陥入爪）の専門医です。画像を見て以下の項目を客観的に測定・数値化してください。前置き不要でJSONのみ返してください。\n\n測定方法：\n1. 湾曲度(curvatureScore)：爪の左端と右端が皮膚に食い込む角度を0-100で数値化。爪がまっすぐ=0、両端が90度以上曲がり完全に皮膚に刺さっている=100\n2. 炎症(rednessScore)：爪周囲の赤み・腫れ・膿の有無を0-100で数値化。正常な肌色=0、強い発赤・腫脹・膿あり=100\n3. 食い込み度(pressureScore)：爪の端が皮膚に接触・埋没している深さを0-100で数値化。接触なし=0、完全に皮膚内に埋没=100\n4. 重症度(severity)：上記3項目の総合判定。none(全て30未満)、mild(いずれか30-50)、moderate(いずれか50-70)、severe(いずれか70以上)\n\n{"severity":"none or mild or moderate or severe","severityLabel":"正常 or 軽度 or 中等度 or 重度","curvatureScore":左右の爪端角度から算出した整数,"rednessScore":炎症レベルから算出した整数,"pressureScore":食い込み深さから算出した整数,"summary":"測定値の根拠を含む2-3文の所見（日本語）","advice":["具体的アドバイス1","具体的アドバイス2","具体的アドバイス3"],"needsDoctor":true or false}\nJSONのみ返してください。';    var res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({
