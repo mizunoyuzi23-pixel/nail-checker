@@ -105,7 +105,8 @@ function reset(){
 }
 
 function loadFile(file){
-  if(!file)return;
+  if(!file){ alert('ファイルがありません'); return; }
+  alert('ファイル名: ' + file.name + ' サイズ: ' + file.size);
   mtype=file.type||'image/jpeg';
   var r=new FileReader();
   r.onload=function(e){
@@ -113,6 +114,7 @@ function loadFile(file){
     el('preview').src=e.target.result;
     showSection('preview');
   };
+  r.onerror=function(){ alert('読み込みエラー'); };
   r.readAsDataURL(file);
 }
 
